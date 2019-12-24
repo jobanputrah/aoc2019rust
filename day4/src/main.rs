@@ -13,7 +13,6 @@ fn main() {
     let mut pass = from;
     while pass != to {
         if is_valid(pass) {
-            println!("{}", &pass.to_string());
             possibilities += 1;
         }
 
