@@ -15,15 +15,42 @@ struct Point {
     y: i64
 }
 
+impl Line {
+    fn intersects(&self, l2: &Self) -> bool {
+        return ccw(self.x1, self.y1, l2.x1, l2.y1, l2.x2, l2.y2) != ccw(self.x2, self.y2, l2.x1, l2.y1, l2.x2, l2.y2) &&
+               ccw(self.x1, self.y1, self.x2, self.y2, l2.x1, l2.y1) != ccw(self.x1, self.y1, self.x2, self.y2, l2.x2, l2.y2); 
+    }
+
+    fn intersects_at(&self, l2: &Self) -> Option<Point> {
+        let a1 = self.y2 - self.y1;
+        let b1 = self.x1 - self.x2;
+        let c1 = a1 * self.x1 + b1 * self.y1;
+
+        let a2 = l2.y2 - l2.y1;
+        let b2 = l2.x1 - l2.x2;
+        let c2 = a2 * l2.x1 + b2 * l2.y1;
+
+        let d = a1 * b2 - a2 * b1;
+
+        if d == 0 {
+            return None;
+        }
+
+        Some(Point {
+            x: (b2 * c1 - b1 * c2) / d,
+            y: (a1 * c2 - a2 * c1) / d
+        })
+    }
+
+    fn has_point(&self, p: &Point) -> bool {
+        return man_dist(self.x1, self.y1, self.x2, self.y2) ==
+            (man_dist(self.x1, self.y1, p.x, p.y) + man_dist(self.x2, self.y2, p.x, p.y));
+    }
+}
+
+
 fn main() {
     run();
-    /*
-    let l1 = Line { x1: -1, y1: -1, x2: 1, y2: 1 };
-    let l2 = Line { x1: -1, y1: 1, x2: 1, y2: -1 };
-    let inter = intersects(&l1, &l2);
-
-    println!("intersects?: {}", inter);
-    */
 }
 
 fn run() -> Option<()> {
@@ -40,8 +67,8 @@ fn run() -> Option<()> {
 
     for i in &l1 {
         for j in &l2 {
-            if intersects(&i, &j) {
-                let p = intersects_at(&i, &j).unwrap();
+            if i.intersects(&j) {
+                let p = i.intersects_at(&j).unwrap();
                 let dist = man_dist(0, 0, p.x, p.y);
                 if dist < min_dist {
                     min_dist = dist;
@@ -57,7 +84,7 @@ fn run() -> Option<()> {
         let mut steps = 0;
 
         for i in &l1 {
-            if is_point_on_line(&i, &p) {
+            if i.has_point(&p) {
                 steps += man_dist(i.x1, i.y1, p.x, p.y);
                 break;
             }
@@ -66,7 +93,7 @@ fn run() -> Option<()> {
         }
 
         for i in &l2 {
-            if is_point_on_line(&i, &p) {
+            if i.has_point(&p) {
                 steps += man_dist(i.x1, i.y1, p.x, p.y);
                 break;
             }
@@ -85,11 +112,6 @@ fn run() -> Option<()> {
     Some(())
 }
 
-fn is_point_on_line(l: &Line, p: &Point) -> bool {
-    return man_dist(l.x1, l.y1, l.x2, l.y2) ==
-        (man_dist(l.x1, l.y1, p.x, p.y) + man_dist(l.x2, l.y2, p.x, p.y));
-}
-
 fn man_dist(x1: i64, y1: i64, x2: i64, y2: i64) -> i64 {
     let dx = x2 - x1;
     let dy = y2 - y1;
@@ -99,44 +121,7 @@ fn man_dist(x1: i64, y1: i64, x2: i64, y2: i64) -> i64 {
 
 fn ccw(x1: i64, y1: i64, x2: i64, y2: i64, x3: i64, y3: i64) -> bool {
     let x = (y3 - y1) * (x2 - x1) > (y2 - y1) * (x3 - x1);
-    // println!("{}", x);
     return x;
-}
-
-fn intersects(l1: &Line, l2: &Line) -> bool {
-    return ccw(l1.x1, l1.y1, l2.x1, l2.y1, l2.x2, l2.y2) != ccw(l1.x2, l1.y2, l2.x1, l2.y1, l2.x2, l2.y2) &&
-           ccw(l1.x1, l1.y1, l1.x2, l1.y2, l2.x1, l2.y1) != ccw(l1.x1, l1.y1, l1.x2, l1.y2, l2.x2, l2.y2); 
-}
-
-fn intersects_at(l1: &Line, l2: &Line) -> Option<Point> {
-    /*
-    let m1 = (l1.y2 - l1.y1) / (l1.x2 - l1.x1);
-    let b1 = l1.y1 - (m1 * l1.x1);
-    let m2 = (l2.y2 - l2.y1) / (l2.x2 - l2.x1);
-    let b2 = l2.y1 - (m2 * l2.x1);
-
-    mx1 + b1 = mx2 + b2;
-    b1 - b2 = mx2 - mx1;
-    b1 - b2 / m = x2 - z1;
-    */
-    let a1 = l1.y2 - l1.y1;
-    let b1 = l1.x1 - l1.x2;
-    let c1 = a1 * l1.x1 + b1 * l1.y1;
-
-    let a2 = l2.y2 - l2.y1;
-    let b2 = l2.x1 - l2.x2;
-    let c2 = a2 * l2.x1 + b2 * l2.y1;
-
-    let d = a1 * b2 - a2 * b1;
-
-    if d == 0 {
-        return None;
-    }
-
-    Some(Point {
-        x: (b2 * c1 - b1 * c2) / d,
-        y: (a1 * c2 - a2 * c1) / d
-    })
 }
 
 fn getlines(dirs: &str) -> Result<Vec<Line>, Box<dyn Error>> {
